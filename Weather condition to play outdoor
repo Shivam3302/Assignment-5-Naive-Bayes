@@ -1,0 +1,46 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import GaussianNB
+
+# Sample dataset
+data = {
+    'Outlook': ['Sunny', 'Sunny', 'Overcast', 'Rainy', 'Rainy', 'Rainy', 'Overcast', 'Sunny', 'Sunny', 'Rainy', 'Sunny', 'Overcast', 'Overcast', 'Rainy'],
+    'Temperature': ['Hot', 'Hot', 'Hot', 'Mild', 'Cool', 'Cool', 'Cool', 'Mild', 'Cool', 'Mild', 'Mild', 'Mild', 'Hot', 'Mild'],
+    'Humidity': ['High', 'High', 'High', 'High', 'Normal', 'Normal', 'Normal', 'High', 'Normal', 'Normal', 'Normal', 'High', 'Normal', 'High'],
+    'Wind': ['Weak', 'Strong', 'Weak', 'Weak', 'Weak', 'Strong', 'Strong', 'Weak', 'Weak', 'Weak', 'Strong', 'Strong', 'Weak', 'Strong'],
+    'Play': ['No', 'No', 'Yes', 'Yes', 'Yes', 'No', 'Yes', 'No', 'Yes', 'Yes', 'Yes', 'Yes', 'Yes', 'No']
+}
+
+df = pd.DataFrame(data)
+
+# Convert the given dataset into frequency tables
+freq_tables = {}
+for column in df.columns[:-1]:
+    freq_tables[column] = df.groupby([column, 'Play']).size().unstack(fill_value=0)
+
+# Generate Likelihood table by finding the probabilities of given features
+likelihood_table = {}
+for column in freq_tables:
+    likelihood_table[column] = freq_tables[column] / freq_tables[column].sum(axis=1)
+
+# Sample test data
+test_data = {
+    'Outlook': 'Sunny',
+    'Temperature': 'Mild',
+    'Humidity': 'Normal',
+    'Wind': 'Weak'
+}
+
+# Use the Bayes theorem to calculate the posterior probability
+posterior_probabilities = {}
+for outcome in df['Play'].unique():
+    posterior_prob = 1
+    for column in test_data:
+        posterior_prob *= likelihood_table[column].loc[test_data[column], outcome]
+    posterior_prob *= len(df[df['Play'] == outcome]) / len(df)
+    posterior_probabilities[outcome] = posterior_prob
+
+# Predict the outcome with the highest posterior probability
+predicted_outcome = max(posterior_probabilities, key=posterior_probabilities.get)
+
+print(f"Predicted outcome: {predicted_outcome}")
